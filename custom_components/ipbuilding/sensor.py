@@ -1,183 +1,123 @@
-"""Sensor platform for IPBuilding."""
-import logging
+"""Sensor platform for the IPBuilding integration."""
+from __future__ import annotations
 
-from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
-from homeassistant.const import UnitOfPower
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator
+import logging
 from typing import Any
 
-from .const import DOMAIN, TYPE_TIME, TYPE_REGIME, TYPE_RELAY, TYPE_DIMMER
-from .api import IPBuildingAPI
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
+from homeassistant.const import UnitOfPower
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
+from .const import HUB_BY_TYPE, TYPE_DIMMER, TYPE_RELAY, TYPE_REGIME, TYPE_TIME
+from .entity import IPBuildingEntity
+from .type_aliases import IPBuildingConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
 
+
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: IPBuildingConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the IPBuilding sensor platform."""
-    data = hass.data[DOMAIN][entry.entry_id]
-    api: IPBuildingAPI = data["api"]
-    coordinator: DataUpdateCoordinator = data["coordinator"]
+    """Set up IPBuilding sensor entities from a config entry."""
+    coordinator = entry.runtime_data.coordinator
+    entities: list[SensorEntity] = []
 
-    entities = []
-    
     if coordinator.data:
-        # Time Sensors
-        for dev_id, device in coordinator.data.items():
-            if int(device.get("Type") or 0) == TYPE_TIME:
-                 entities.append(IPBuildingSensor(coordinator, api, device, "Time", "hub_system"))
-        
-        # Regime Sensors
-        for dev_id, device in coordinator.data.items():
-            if int(device.get("Type") or 0) == TYPE_REGIME:
-                 entities.append(IPBuildingSensor(coordinator, api, device, "Regime", "hub_system"))
-        
-        # Power Sensors (Relays and Dimmers)
-        for dev_id, device in coordinator.data.items():
+        for device in coordinator.data.values():
             dtype = int(device.get("Type") or 0)
-            if dtype in [TYPE_RELAY, TYPE_DIMMER]:
-                if "Watt" in device:
-                    entities.append(IPBuildingPowerSensor(coordinator, api, device))
+            if dtype == TYPE_TIME:
+                entities.append(
+                    IPBuildingSystemSensor(coordinator, device, "Time", "hub_system")
+                )
+            elif dtype == TYPE_REGIME:
+                entities.append(
+                    IPBuildingSystemSensor(
+                        coordinator, device, "Regime", "hub_system"
+                    )
+                )
+            elif dtype in (TYPE_RELAY, TYPE_DIMMER) and "Watt" in device:
+                entities.append(IPBuildingPowerSensor(coordinator, device))
 
     async_add_entities(entities)
 
 
-class IPBuildingSensor(CoordinatorEntity, SensorEntity):
-    """Representation of an IPBuilding Sensor."""
+def _to_int(value: Any) -> int:
+    """Convert a possibly-None / bool / str value to int, defaulting to 0."""
+    if value is None:
+        return 0
+    if isinstance(value, bool):
+        return 1 if value else 0
+    return int(value)
 
-    _attr_has_entity_name = True
 
-    def __init__(self, coordinator: DataUpdateCoordinator, api: IPBuildingAPI, device: dict, sensor_type: str, hub: str) -> None:
-        """Initialize the sensor."""
-        super().__init__(coordinator)
-        self._api = api
-        self._sensor_type = sensor_type
-        self._device_id = device.get("ID") or device.get("id")
-        self._initial_device_data = device
-        
-        self._attr_unique_id = f"ipbuilding_sensor_{self._device_id}"
-        self._attr_name = device.get("Description") or device.get("name") or f"{sensor_type} {self._device_id}"
-        
+class IPBuildingSystemSensor(IPBuildingEntity, SensorEntity):
+    """Generic sensor for Time and Regime devices."""
+
+    def __init__(
+        self,
+        coordinator,
+        device: dict,
+        sensor_type: str,
+        hub: str,
+    ) -> None:
+        super().__init__(coordinator, device, hub)
+        self._attr_unique_id = f"{coordinator.unique_id_prefix}_sensor_{self._device_id}"
+        self._attr_name = (
+            device.get("Description")
+            or device.get("name")
+            or f"{sensor_type} {self._device_id}"
+        )
+        self._attr_device_info["model"] = sensor_type
         self._attr_entity_registry_visible_default = False
-        
-        # Device Info
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, f"sensor_{self._device_id}")},
-            "name": self._attr_name,
-            "manufacturer": "IPBuilding",
-            "model": sensor_type,
-            "via_device": (DOMAIN, hub),
-        }
-        if group := device.get("Group"):
-            self._attr_device_info["suggested_area"] = group.get("Name")
-
-    @property
-    def _device_data(self) -> dict:
-        """Get the latest device data from coordinator."""
-        return self.coordinator.data.get(self._device_id, self._initial_device_data)
-
-    @property
-    def available(self) -> bool:
-        """Return if entity is available."""
-        return self.coordinator.last_update_success and self._device_data.get("Visible", True)
 
     @property
     def native_value(self) -> Any:
-        """Return the state of the sensor."""
+        """Return the raw value reported by the controller."""
         d = self._device_data
         return d.get("Value") or d.get("value")
 
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Return the state attributes."""
-        d = self._device_data
-        return {
-            "IpAddress": d.get("IpAddress"),
-            "Port": d.get("Port"),
-            "Protocol": d.get("Protocol"),
-            "ID": self._device_id,
-            "Status": d.get("Status"),
-            "Output": d.get("Output"),
-            "Kind": d.get("Kind"),
-        }
 
+class IPBuildingPowerSensor(IPBuildingEntity, SensorEntity):
+    """A power sensor derived from a relay/dimmer's Watt attribute and state."""
 
-class IPBuildingPowerSensor(CoordinatorEntity, SensorEntity):
-    """Representation of an IPBuilding Power Sensor."""
-
-    _attr_has_entity_name = True
     _attr_device_class = SensorDeviceClass.POWER
     _attr_native_unit_of_measurement = UnitOfPower.WATT
     _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_entity_registry_visible_default = False
 
-    def __init__(self, coordinator: DataUpdateCoordinator, api: IPBuildingAPI, device: dict) -> None:
-        """Initialize the power sensor."""
-        super().__init__(coordinator)
-        self._api = api
-        self._device_id = device.get("ID") or device.get("id")
-        self._initial_device_data = device
-        
-        self._attr_unique_id = f"ipbuilding_power_{self._device_id}"
-        self._attr_name = f"{device.get('Description') or device.get('name')} Power"
-        
-        # Hide state display by default
-        self._attr_entity_registry_visible_default = False
-
-        # Device Info
-        hub = "hub_dimmers" if int(device.get("Type") or 0) == TYPE_DIMMER else "hub_relays"
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, f"output_{self._device_id}")},
-            "name": device.get("Description") or device.get("name") or f"Device {self._device_id}",
-            "manufacturer": "IPBuilding",
-            "model": "Dimmer" if int(device.get("Type") or 0) == TYPE_DIMMER else "Relay",
-            "via_device": (DOMAIN, hub),
-        }
-        if group := device.get("Group"):
-            self._attr_device_info["suggested_area"] = group.get("Name")
-
-    @property
-    def _device_data(self) -> dict:
-        """Get the latest device data from coordinator."""
-        return self.coordinator.data.get(self._device_id, self._initial_device_data)
-
-    @property
-    def available(self) -> bool:
-        """Return if entity is available."""
-        return self.coordinator.last_update_success and self._device_data.get("Visible", True)
+    def __init__(self, coordinator, device: dict) -> None:
+        dtype = int(device.get("Type") or 0)
+        hub_id, _ = HUB_BY_TYPE[dtype]
+        super().__init__(coordinator, device, hub_id)
+        self._attr_unique_id = f"{coordinator.unique_id_prefix}_power_{self._device_id}"
+        self._attr_name = (
+            f"{device.get('Description') or device.get('name')} Power"
+        )
+        self._attr_device_info["model"] = "Dimmer" if dtype == TYPE_DIMMER else "Relay"
 
     @property
     def native_value(self) -> float:
-        """Return the state of the sensor."""
-        return self._calculate_power()
-
-    def _calculate_power(self) -> float:
-        """Calculate the power usage based on state."""
+        """Return the estimated power usage in Watts."""
         d = self._device_data
         rated_watt = float(d.get("Watt") or 0)
-        
-        val = d.get("Status")
-        if val is None:
-            val = d.get("status")
-        if val is None:
-            val = d.get("Value")
-        if val is None:
-            val = d.get("value")
 
-        if isinstance(val, bool):
-            val = 1 if val else 0
-        else:
-            val = int(val or 0)
-
+        raw = (
+            d.get("Status")
+            or d.get("status")
+            or d.get("Value")
+            or d.get("value")
+        )
+        value = _to_int(raw)
         type_id = int(d.get("Type") or d.get("type") or 0)
-        
+
         if type_id == TYPE_DIMMER:
-             # Dimmer value is 0-100
-             return round(rated_watt * (val / 100.0), 1)
-        
-        # Binary ON/OFF
-        return rated_watt if val > 0 else 0
+            # Dimmer value is 0..100.
+            return round(rated_watt * (value / 100.0), 1)
+        return rated_watt if value > 0 else 0

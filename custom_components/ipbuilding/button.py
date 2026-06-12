@@ -1,104 +1,53 @@
-"""Button platform for IPBuilding."""
-import logging
-from typing import Any
+"""Button platform for the IPBuilding integration."""
+from __future__ import annotations
 
+import logging
+
+from aiohttp import ClientError
 from homeassistant.components.button import ButtonEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator
 
-from .const import DOMAIN, TYPE_BUTTON
-from .api import IPBuildingAPI
+from .const import HUB_BY_TYPE, TYPE_BUTTON
+from .entity import IPBuildingEntity
+from .type_aliases import IPBuildingConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
 
+
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: IPBuildingConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the IPBuilding button platform."""
-    data = hass.data[DOMAIN][entry.entry_id]
-    api: IPBuildingAPI = data["api"]
-    coordinator: DataUpdateCoordinator = data["coordinator"]
+    """Set up IPBuilding button entities from a config entry."""
+    coordinator = entry.runtime_data.coordinator
+    entities: list[ButtonEntity] = []
 
-    # Initial data is already in coordinator
-    devices = []
     if coordinator.data:
-        # Filter for Buttons (Type 50)
-        from .const import TYPE_BUTTON
-        for dev_id, device in coordinator.data.items():
+        for device in coordinator.data.values():
             if int(device.get("Type") or 0) == TYPE_BUTTON:
-                devices.append(device)
-
-    entities = []
-    for device in devices:
-        entities.append(IPBuildingButton(coordinator, api, device))
+                entities.append(IPBuildingButton(coordinator, device))
 
     async_add_entities(entities)
 
 
-class IPBuildingButton(CoordinatorEntity, ButtonEntity):
-    """Representation of an IPBuilding Button."""
+class IPBuildingButton(IPBuildingEntity, ButtonEntity):
+    """Representation of an IPBuilding button."""
 
-    _attr_has_entity_name = True
+    _attr_entity_registry_enabled_default = False
+    _attr_entity_registry_visible_default = False
 
-    def __init__(self, coordinator: DataUpdateCoordinator, api: IPBuildingAPI, device: dict) -> None:
-        """Initialize the button."""
-        super().__init__(coordinator)
-        self._api = api
-        self._device_id = device.get("ID") or device.get("id")
-        self._initial_device_data = device
-        
-        self._attr_unique_id = f"ipbuilding_button_{self._device_id}"
-        self._attr_name = device.get("Description") or device.get("name") or f"Button {self._device_id}"
-        
-        # Disabled by default
-        self._attr_entity_registry_enabled_default = False
-        
-        # Hide state display by default
-        self._attr_entity_registry_visible_default = False
-        
-        # Device Info
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, f"button_{self._device_id}")},
-            "name": self._attr_name,
-            "manufacturer": "IPBuilding",
-            "model": "Button",
-            "via_device": (DOMAIN, "hub_buttons"),
-        }
-        if group := device.get("Group"):
-            self._attr_device_info["suggested_area"] = group.get("Name")
-            
-    @property
-    def _device_data(self) -> dict:
-        """Get the latest device data from coordinator."""
-        # Use initial data as fallback, but ideally it's in coordinator
-        return self.coordinator.data.get(self._device_id, self._initial_device_data)
-
-    @property
-    def available(self) -> bool:
-        """Return if entity is available."""
-        # Use Visible property from API, default to True
-        return self._device_data.get("Visible", True)
-            
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Return the state attributes."""
-        d = self._device_data
-        return {
-            "IpAddress": d.get("IpAddress"),
-            "Port": d.get("Port"),
-            "Protocol": d.get("Protocol"),
-            "ID": self._device_id,
-            "Status": d.get("Status"),
-            "Output": d.get("Output"),
-            "Kind": d.get("Kind"),
-        }
+    def __init__(self, coordinator, device: dict) -> None:
+        super().__init__(coordinator, device, HUB_BY_TYPE[TYPE_BUTTON][0])
+        self._attr_unique_id = f"{coordinator.unique_id_prefix}_button_{self._device_id}"
+        self._attr_device_info["model"] = "Button"
 
     async def async_press(self) -> None:
-        """Handle the button press."""
-        # Assumption: Pressing a button sends a '1' or triggers an action.
-        # We'll try sending '1'.
-        await self._api.set_value(self._device_id, 1, "ON")
+        """Handle the button press by sending a 1/ON to the controller."""
+        try:
+            await self.coordinator.api.set_value(self._device_id, 1, "ON")
+        except ClientError as err:
+            _LOGGER.warning(
+                "Failed to press IPBuilding button %s: %s", self._device_id, err
+            )

@@ -1,141 +1,91 @@
-"""Switch platform for IPBuilding."""
+"""Switch platform for the IPBuilding integration."""
+from __future__ import annotations
+
 import logging
 from typing import Any
 
-from homeassistant.components.switch import SwitchEntity
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator
 
-from .const import DOMAIN, TYPE_RELAY
-from .api import IPBuildingAPI
+from .const import (
+    HUB_BY_TYPE,
+    KIND_AUTOMATION,
+    KIND_FAN,
+    KIND_LOCK,
+    KIND_SOCKET,
+    KIND_VALVE,
+    TYPE_RELAY,
+)
+from .entity import IPBuildingEntity
+from .type_aliases import IPBuildingConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
 
+
+# Kind -> (device class, icon) for relays that act as switches.
+_KIND_DEVICE_CLASS: dict[int, tuple[SwitchDeviceClass | None, str | None]] = {
+    KIND_SOCKET: (SwitchDeviceClass.OUTLET, "mdi:power-socket-eu"),
+    KIND_LOCK: (SwitchDeviceClass.SWITCH, "mdi:lock"),
+    KIND_FAN: (SwitchDeviceClass.SWITCH, "mdi:fan"),
+    KIND_VALVE: (SwitchDeviceClass.SWITCH, "mdi:valve"),
+    KIND_AUTOMATION: (SwitchDeviceClass.SWITCH, "mdi:robot"),
+}
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: IPBuildingConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the IPBuilding switch platform."""
-    data = hass.data[DOMAIN][entry.entry_id]
-    api: IPBuildingAPI = data["api"]
-    coordinator: DataUpdateCoordinator = data["coordinator"]
+    """Set up IPBuilding switch entities from a config entry."""
+    coordinator = entry.runtime_data.coordinator
+    entities: list[SwitchEntity] = []
 
-    # Iterate coordinator data
-    entities = []
     if coordinator.data:
-        from .const import TYPE_RELAY
-        for dev_id, device in coordinator.data.items():
-            if int(device.get("Type") or 0) == TYPE_RELAY:
-                # Skip Kind 1 (Light) - handled in light.py
-                if device.get("Kind") == 1:
-                    continue
-                entities.append(IPBuildingSwitch(coordinator, api, device))
+        for device in coordinator.data.values():
+            if int(device.get("Type") or 0) != TYPE_RELAY:
+                continue
+            # Skip relays that the light platform already exposed.
+            if device.get("Kind") == 1:
+                continue
+            entities.append(IPBuildingSwitch(coordinator, device))
 
     async_add_entities(entities)
 
 
-class IPBuildingSwitch(CoordinatorEntity, SwitchEntity):
-    """Representation of an IPBuilding Switch (Relay)."""
-        
-    _attr_has_entity_name = True
+class IPBuildingSwitch(IPBuildingEntity, SwitchEntity):
+    """Representation of an IPBuilding relay that is not a light."""
 
-    def __init__(self, coordinator: DataUpdateCoordinator, api: IPBuildingAPI, device: dict) -> None:
-        """Initialize the switch."""
-        super().__init__(coordinator)
-        self._api = api
-        self._device_id = device.get("ID") or device.get("id")
-        self._initial_device_data = device
-        
-        self._attr_unique_id = f"ipbuilding_relay_{self._device_id}"
-        self._attr_name = device.get("Description") or device.get("name") or f"Relay {self._device_id}"
-        
-        # Default to disabled in registry, but enabled in HA logic
-        #self._attr_entity_registry_enabled_default = False
-        
-        # Handle Kind
+    def __init__(self, coordinator, device: dict[str, Any]) -> None:
+        super().__init__(coordinator, device, HUB_BY_TYPE[TYPE_RELAY][0])
+        self._attr_unique_id = f"{coordinator.unique_id_prefix}_relay_{self._device_id}"
+        self._attr_device_info["model"] = "Relay"
+
         kind = device.get("Kind")
-        if kind == 2: # Socket
-            self._attr_device_class = "outlet"
-            self._attr_icon = "mdi:power-socket-eu"
-        elif kind == 4: # Lock
-            self._attr_icon = "mdi:lock"
-        elif kind == 5: # Fan
-            self._attr_icon = "mdi:fan"
-        elif kind == 6: # Valve
-            self._attr_icon = "mdi:valve"
-        elif kind == 52: # Detector (Smoke?) - Check if this is correct mapping or if it needs to be specific
-             # User requested smoke detector icon. Assuming Kind 52 might be detector or specific device.
-             # If Kind is not enough, we might need to check Description or Type.
-             # But user said "relais die een licht bedienen... rookmelder = smoke detector".
-             # If smoke detector is a relay (Type 1), we check here.
-             pass
-
-        # Check for smoke detector in description or kind if applicable
-        if "smoke" in self._attr_name.lower() or "rook" in self._attr_name.lower():
-             self._attr_icon = "mdi:smoke-detector-variant"
-        
-        # Device Info
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, f"output_{self._device_id}")},
-            "name": self._attr_name,
-            "manufacturer": "IPBuilding",
-            "model": "Relay",
-            "via_device": (DOMAIN, "hub_relays"),
-        }
-        if group := device.get("Group"):
-            self._attr_device_info["suggested_area"] = group.get("Name")
-
-    @property
-    def _device_data(self) -> dict:
-        """Get the latest device data from coordinator."""
-        return self.coordinator.data.get(self._device_id, self._initial_device_data)
-
-    @property
-    def available(self) -> bool:
-        """Return if entity is available."""
-        # Use Visible property from API, default to True
-        return self.coordinator.last_update_success and self._device_data.get("Visible", True)
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Return the state attributes."""
-        d = self._device_data
-        return {
-            "IpAddress": d.get("IpAddress"),
-            "Port": d.get("Port"),
-            "Protocol": d.get("Protocol"),
-            "ID": self._device_id,
-            "Status": d.get("Status"),
-            "Output": d.get("Output"),
-            "Kind": d.get("Kind"),
-        }
+        if (mapping := _KIND_DEVICE_CLASS.get(kind)) is not None:
+            device_class, icon = mapping
+            if device_class is not None:
+                self._attr_device_class = device_class
+            if icon is not None:
+                self._attr_icon = icon
 
     @property
     def is_on(self) -> bool:
-        """Return true if switch is on."""
-        d = self._device_data
-        val = d.get("Status") or d.get("status") or d.get("Value") or d.get("value")
+        val = (
+            self._device_data.get("Status")
+            or self._device_data.get("status")
+            or self._device_data.get("Value")
+            or self._device_data.get("value")
+        )
         if isinstance(val, bool):
             return val
         return int(val or 0) > 0
 
     async def async_turn_on(self, **kwargs: Any) -> None:
-        """Turn the switch on."""
-        # Optimistic update: immediately update local state
-        self.coordinator.data[self._device_id]["Value"] = 1
-        self.coordinator.data[self._device_id]["Status"] = 1
-        self.async_write_ha_state()
-        
-        await self._api.set_value(self._device_id, 1, "ON")
+        await self.coordinator.api.set_value(self._device_id, 1, "ON")
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
-        """Turn the switch off."""
-        # Optimistic update: immediately update local state
-        self.coordinator.data[self._device_id]["Value"] = 0
-        self.coordinator.data[self._device_id]["Status"] = 0
-        self.async_write_ha_state()
-        
-        await self._api.set_value(self._device_id, 0, "OFF")
+        await self.coordinator.api.set_value(self._device_id, 0, "OFF")
+        await self.coordinator.async_request_refresh()

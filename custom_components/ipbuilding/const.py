@@ -1,7 +1,11 @@
 """Constants for the IPBuilding integration."""
 
+from __future__ import annotations
+
 DOMAIN = "ipbuilding"
 DEFAULT_PORT = 30200
+DEFAULT_TIMEOUT = 10
+MANUFACTURER = "IPBuilding"
 
 CONF_HOST = "host"
 CONF_PORT = "port"
@@ -38,3 +42,31 @@ KIND_FAN = 5
 KIND_VALVE = 6
 KIND_TEMPERATURE = 7
 KIND_NOT_APPLICABLE = 8
+
+# Device type groupings used by the coordinator for partial polling.
+POLLED_DEVICE_TYPES: tuple[int, ...] = (TYPE_RELAY, TYPE_DIMMER, TYPE_DMX, TYPE_LED)
+
+# Device type -> "hub" identifier used for device-registry grouping.
+HUB_BY_TYPE: dict[int, tuple[str, str]] = {
+    TYPE_DIMMER: ("hub_dimmers", "IPBuilding Dimmers"),
+    TYPE_RELAY: ("hub_relays", "IPBuilding Relays"),
+    TYPE_DMX: ("hub_dmx", "IPBuilding DMX"),
+    TYPE_LED: ("hub_led", "IPBuilding LED"),
+    TYPE_BUTTON: ("hub_buttons", "IPBuilding Buttons"),
+    TYPE_SPHERE: ("hub_scenes", "IPBuilding Scenes"),
+    TYPE_TEMP_SPHERE: ("hub_scenes", "IPBuilding Scenes"),
+    TYPE_DETECTOR: ("hub_detectors", "IPBuilding Detectors"),
+    TYPE_TEMPERATURE: ("hub_temperature", "IPBuilding Temperature"),
+    TYPE_KMI: ("hub_weather", "IPBuilding Weather"),
+    TYPE_WEATHER_STATION: ("hub_weather", "IPBuilding Weather"),
+    TYPE_ENERGY_COUNTER: ("hub_energy", "IPBuilding Energy"),
+    TYPE_ENERGY_METER: ("hub_energy", "IPBuilding Energy"),
+    TYPE_ACCESS_READER: ("hub_access", "IPBuilding Access"),
+    TYPE_ACCESS_KEY: ("hub_access", "IPBuilding Access"),
+    TYPE_ACCESS_CONTROL: ("hub_access", "IPBuilding Access"),
+    TYPE_ANALOG_SENSOR: ("hub_analog", "IPBuilding Analog"),
+    TYPE_TIME: ("hub_system", "IPBuilding System"),
+    TYPE_REGIME: ("hub_system", "IPBuilding System"),
+    TYPE_PROG: ("hub_logic", "IPBuilding Logic"),
+    TYPE_SCRIPT: ("hub_logic", "IPBuilding Logic"),
+}

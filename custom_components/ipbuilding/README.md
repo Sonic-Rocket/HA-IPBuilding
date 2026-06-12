@@ -4,18 +4,41 @@
 
 This Home Assistant custom component provides integration with the IPBuilding system. It allows you to control dimmers, retrieve sensor data, and trigger custom actions via the IPBuilding REST API.
 
+## Quality scale
+
+This integration targets the **bronze** tier of the Home Assistant integration
+quality scale. It therefore:
+
+- Configures entirely through the UI (config flow) with connection validation
+- Sets a stable `unique_id` (`host:port`) and aborts duplicate entries
+- Stores runtime data on `entry.runtime_data` via a typed `IPBuildingData` dataclass
+- Uses a `DataUpdateCoordinator` subclass (`IPBuildingDataCoordinator`) with
+  `config_entry` properly bound
+- Raises `ConfigEntryNotReady` on connectivity failures so HA retries with back-off
+- Catches specific exceptions (`IPBuildingCannotConnect`,
+  `IPBuildingInvalidResponse`, `aiohttp.ClientError`) instead of generic `Exception`
+- Imports `ConfigFlowResult` (not the deprecated `FlowResult`)
+- Provides English (`translations/en.json`) and Dutch (`translations/nl.json`)
+  translations
+- Has a unit-test suite under `tests/`
+
 ## Supported Platforms
 
 The integration automatically discovers and creates entities for the following IPBuilding device types:
 
 - **Lights**: Dimmers (Type 2) and Relays with Kind=1 (Type 1)
 - **Switches**: Relays (Type 1) with Kind≠1 (outlets, locks, fans, valves, etc.)
-- **Sensors**: 
+- **Sensors**:
   - Time sensors (Type 56)
   - Regime sensors (Type 200)
   - Power sensors (automatically created for devices with `Watt` attribute)
 - **Buttons**: Button devices (Type 50)
 - **Scenes**: Sphere (Type 100) and TempSphere (Type 101) devices
+
+## API documentation
+
+- **REST v1** (used by this integration): see [Important API Endpoints](#important-api-endpoints) below.
+- **Legacy mobile API** (`/mobile/core/actions.php`): archived reference and analysis in [`docs/mobile-api.md`](../../docs/mobile-api.md) and [`docs/reference/actions.php`](../../docs/reference/actions.php).
 
 ## Important API Endpoints
 
@@ -75,7 +98,7 @@ All entities expose the following IPBuilding properties as attributes:
 
 ## Development
 
-For local development, see the top‑level `DEVELOPMENT.md` which contains instructions on setting up a virtual environment and running Home Assistant locally.
+For local development, see the top-level `DEVELOPMENT.md` which contains instructions on setting up a virtual environment and running Home Assistant locally.
 
 ## API Documentation
 

@@ -1,0 +1,22 @@
+{
+    "config": {
+        "title": "IPBuilding",
+        "step": {
+            "user": {
+                "title": "Verbinden met IPBuilding controller",
+                "description": "Geef de verbindingsgegevens op voor je IPBuilding controller.",
+                "data": {
+                    "host": "Host",
+                    "port": "Poort"
+                }
+            }
+        },
+        "error": {
+            "cannot_connect": "Kan geen verbinding maken met de IPBuilding controller",
+            "unknown": "Er is een onverwachte fout opgetreden"
+        },
+        "abort": {
+            "already_configured": "Deze IPBuilding controller is al geconfigureerd"
+        }
+    }
+}

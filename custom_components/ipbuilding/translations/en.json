@@ -1,0 +1,22 @@
+{
+    "config": {
+        "title": "IPBuilding",
+        "step": {
+            "user": {
+                "title": "Connect to IPBuilding controller",
+                "description": "Provide the connection details for your IPBuilding controller.",
+                "data": {
+                    "host": "Host",
+                    "port": "Port"
+                }
+            }
+        },
+        "error": {
+            "cannot_connect": "Failed to connect to the IPBuilding controller",
+            "unknown": "An unexpected error occurred"
+        },
+        "abort": {
+            "already_configured": "This IPBuilding controller is already configured"
+        }
+    }
+}

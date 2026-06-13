@@ -17,7 +17,9 @@ This integration communicates with the **IPBox** via its built-in REST API. The 
 - Map IPBuilding entities to Home Assistant entities for dashboards and automations
 - Designed for both residential and assisted-living / workspace deployments
 
-## Requirements
+This integration creates the following Home Assistant platforms: `light`, `switch`, `button`, `sensor`, and `scene`.
+
+## Requirements {#prerequisites}
 
 - A working IPBuilding installation with an **IPBox** controller
 - Network access from your Home Assistant instance to the IPBox
@@ -27,7 +29,13 @@ This integration communicates with the **IPBox** via its built-in REST API. The 
 ## Installation
 
 ### HACS (recommended)
+
+Make sure the [prerequisites](#prerequisites) are met before installing.
+
 [![Add to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=markminnoye&repository=HA-IPBuilding&category=integration)
+[![Version](https://img.shields.io/github/v/release/markminnoye/HA-IPBuilding)](https://github.com/markminnoye/HA-IPBuilding/releases/latest)
+[![License](https://img.shields.io/github/license/markminnoye/HA-IPBuilding)](LICENSE)
+[![Quality Scale](https://img.shields.io/badge/quality%20scale-bronze-brightgreen)](https://developers.home-assistant.io/docs/core/integration-quality-scale/)
 1. Add this repository as a **Custom repository** in HACS. 
 2. Search for **HA-IPBuilding** in HACS.
 3. Install the integration and **restart Home Assistant**.
@@ -45,7 +53,9 @@ This integration communicates with the **IPBox** via its built-in REST API. The 
 
 ## Configuration
 
-Configuration is done via the UI, or manually by editing `configuration.yaml`.
+Configuration is done via the Home Assistant user interface. Use **Settings → Devices & Services → Add Integration → IPBuilding** to set up the integration.
+
+> **Note:** The YAML example below is kept for reference only and is not the recommended setup path.
 
 Basic example:
 
@@ -60,3 +70,18 @@ ipbuilding:
   include_switches: true
   include_scenes: true
   include_ventilation: true
+```
+
+## Actions
+
+The integration does not register custom service actions. All functionality is exposed through standard Home Assistant service calls available on the created entities:
+
+- `light.turn_on` / `light.turn_off` — controls relays, dimmers, DMX and LED devices
+- `switch.turn_on` / `switch.turn_off` — controls switches and ventilation units
+- `button.press` — triggers IPBuilding buttons (momentary actions)
+- `scene.turn_on` — activates IPBuilding spheres / sferen (Type 100 and 101)
+- `homeassistant.update_entity` — forces an immediate refresh of an entity's state
+
+## Removing the integration
+
+To remove the integration, go to **Settings → Devices & Services → IPBuilding**, select your entry and click **Delete**. This only removes the integration from Home Assistant — no changes are made to the IPBox or its configuration.

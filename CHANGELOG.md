@@ -182,7 +182,11 @@ Where the review recommended a change, this rc either implements it
 non-destructively or documents the limitation explicitly.
 
 ### Notes for existing users
-- If you added `markminnoye/HA-IPBuilding` as a custom HACS repository, remove it and add `https://github.com/Sonic-Rocket/HA-IPBuilding` to keep receiving updates.
+- The repository has been transferred from `Sonic-Rocket/HA-IPBuilding` to
+  `markminnoye/HA-IPBuilding`. GitHub redirects the old URL automatically,
+  so existing HACS installs continue to receive updates without any action
+  on your part. If you prefer, you can remove the old custom repository
+  from HACS and re-add the new URL, but this is purely cosmetic.
 
 ## [0.4.1] - 2026-06-13
 

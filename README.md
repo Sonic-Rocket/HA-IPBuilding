@@ -17,17 +17,7 @@ This integration communicates with the **IPBox** via its built-in REST API. The 
 - Map IPBuilding entities to Home Assistant entities for dashboards and automations
 - Designed for both residential and assisted-living / workspace deployments
 
-This integration creates the following Home Assistant platforms: `light`, `switch`, `button`, `sensor`, and `scene`.
-
-## Requirements {#prerequisites}
-
-- A working IPBuilding installation with an **IPBox** controller
-- Network access from your Home Assistant instance to the IPBox
-- API/controller access on the IPBox (IP address/hostname, port and credentials, depending on your setup)
-- Home Assistant 2024.x or newer 
-
-## Installation
-
+This integration creates the following Home Assistant platforms: `light`, `switch`, `button`, `sensor`, and `scene`. ## Requirements {#prerequisites} - A working IPBuilding installation with an **IPBox** controller - Network access from your Home Assistant instance to the IPBox - API/controller access on the IPBox (IP address/hostname, port and credentials, depending on your setup) - Home Assistant 2024.x or newer ## Installation
 ### HACS (recommended)
 
 Make sure the [prerequisites](#prerequisites) are met before installing.
@@ -53,24 +43,16 @@ Make sure the [prerequisites](#prerequisites) are met before installing.
 
 ## Configuration
 
-Configuration is done via the Home Assistant user interface. Use **Settings → Devices & Services → Add Integration → IPBuilding** to set up the integration.
+The integration is configured entirely through the Home Assistant user interface — no YAML is required.
 
-> **Note:** The YAML example below is kept for reference only and is not the recommended setup path.
+1. Make sure your **IPBox** is reachable on the local network and its REST API is enabled (default port: `30200`).
+2. In Home Assistant, go to **Settings → Devices & Services → Add Integration**.
+3. Search for **IPBuilding** and follow the prompts.
+4. You will be asked for:
+   - **Host**: the IP address or hostname of your IPBox (e.g. `192.168.1.50`)
+   - **Port**: the REST API port (default `30200`)
 
-Basic example:
-
-```yaml
-ipbuilding:
-  host: 192.168.1.50
-  port: 12345
-  username: "ha_integration"
-  password: "your-password"
-  # Optional filters / mappings
-  include_lights: true
-  include_switches: true
-  include_scenes: true
-  include_ventilation: true
-```
+The config flow validates the connection before saving, and only one config entry per `host:port` is allowed.
 
 ## Actions
 
@@ -85,3 +67,16 @@ The integration does not register custom service actions. All functionality is e
 ## Removing the integration
 
 To remove the integration, go to **Settings → Devices & Services → IPBuilding**, select your entry and click **Delete**. This only removes the integration from Home Assistant — no changes are made to the IPBox or its configuration.
+
+## Issues and feature requests
+
+Please use the [issue tracker](https://github.com/markminnoye/HA-IPBuilding/issues) to report bugs or request features. When reporting a bug, include:
+
+- Home Assistant version
+- Integration version (see **Settings → Devices & Services → IPBuilding**)
+- Relevant log output from **Settings → System → Logs** (filter on `ipbuilding`)
+- A description of your IPBox setup (firmware version, device types involved)
+
+## License
+
+This project is licensed under the terms of the [LICENSE](LICENSE) file.

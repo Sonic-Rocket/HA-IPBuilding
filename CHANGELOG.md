@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.0.0] - 2026-06-13
+
+First HACS-ready release of the IPBuilding integration. The 0.x line was
+considered stable for daily use, but 1.0.0 marks the first version that
+officially meets the Home Assistant Bronze quality scale and ships with the
+metadata, CI and documentation expected of a HACS-default repository.
+
+### Added
+- `manifest.json` now declares the fields required for HACS-default
+  inclusion: non-empty `codeowners` (`@markminnoye`), an `issue_tracker`
+  URL, `integration_type: hub` and `quality_scale: bronze`.
+- GitHub Actions workflows: `.github/workflows/validate-hacs.yaml` and
+  `.github/workflows/validate-hassfest.yaml` validate every push and PR
+  against HACS and the Home Assistant Hassfest validator.
+- README documents the UI-only configuration flow and points users at the
+  GitHub issue tracker for bug reports and feature requests.
+
+### Removed
+- Outdated YAML configuration example from the README. The integration has
+  always been configured via the UI config flow (host + port); the YAML
+  snippet (with non-existent `username`/`password` fields) was misleading.
+
 ## [0.4.1] - 2026-06-13
 
 ### Fixed

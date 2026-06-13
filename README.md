@@ -17,7 +17,17 @@ This integration communicates with the **IPBox** via its built-in REST API. The 
 - Map IPBuilding entities to Home Assistant entities for dashboards and automations
 - Designed for both residential and assisted-living / workspace deployments
 
-This integration creates the following Home Assistant platforms: `light`, `switch`, `button`, `sensor`, and `scene`. ## Requirements {#prerequisites} - A working IPBuilding installation with an **IPBox** controller - Network access from your Home Assistant instance to the IPBox - API/controller access on the IPBox (IP address/hostname, port and credentials, depending on your setup) - Home Assistant 2024.x or newer ## Installation
+This integration creates the following Home Assistant platforms: `light`, `switch`, `button`, `sensor`, and `scene`.
+
+## Requirements {#prerequisites}
+
+- A working IPBuilding installation with an **IPBox** controller
+- Network access from your Home Assistant instance to the IPBox
+- API/controller access on the IPBox (IP address/hostname, port and credentials, depending on your setup)
+- Home Assistant 2024.x or newer
+
+## Installation
+
 ### HACS (recommended)
 
 Make sure the [prerequisites](#prerequisites) are met before installing.

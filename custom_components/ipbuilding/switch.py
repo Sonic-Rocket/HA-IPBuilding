@@ -59,7 +59,7 @@ class IPBuildingSwitch(IPBuildingEntity, SwitchEntity):
 
     def __init__(self, coordinator, device: dict[str, Any]) -> None:
         super().__init__(coordinator, device, HUB_BY_TYPE[TYPE_RELAY][0])
-        self._attr_unique_id = f"{coordinator.unique_id_prefix}_relay_{self._device_id}"
+        self._attr_unique_id = f"ipbuilding_relay_{self._device_id}"
         self._attr_device_info["model"] = "Relay"
 
         kind = device.get("Kind")

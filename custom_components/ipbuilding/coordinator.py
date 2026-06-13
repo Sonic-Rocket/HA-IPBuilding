@@ -40,11 +40,6 @@ class IPBuildingDataCoordinator(DataUpdateCoordinator[dict[Any, dict[str, Any]]]
         self.api = api
         self._initial_data: dict[Any, dict[str, Any]] = {}
 
-    @property
-    def unique_id_prefix(self) -> str:
-        """Return a prefix used to build entity unique_ids for this entry."""
-        return f"ipbuilding_{self.config_entry.entry_id}"
-
     async def _async_setup(self) -> None:
         """Perform a one-time full fetch of every device on the controller."""
         devices = await self.api.get_devices()

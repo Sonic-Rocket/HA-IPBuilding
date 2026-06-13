@@ -29,7 +29,7 @@ class IPBuildingEntity(CoordinatorEntity[IPBuildingDataCoordinator]):
         super().__init__(coordinator)
         self._device_id = device.get("ID") or device.get("id")
         self._initial_device_data = device
-        self._attr_unique_id = f"{coordinator.unique_id_prefix}_{self._device_id}"
+        self._attr_unique_id = f"ipbuilding_{self._device_id}"
         self._attr_name = (
             device.get("Description")
             or device.get("name")

@@ -40,7 +40,7 @@ class IPBuildingButton(IPBuildingEntity, ButtonEntity):
 
     def __init__(self, coordinator, device: dict) -> None:
         super().__init__(coordinator, device, HUB_BY_TYPE[TYPE_BUTTON][0])
-        self._attr_unique_id = f"{coordinator.unique_id_prefix}_button_{self._device_id}"
+        self._attr_unique_id = f"ipbuilding_button_{self._device_id}"
         self._attr_device_info["model"] = "Button"
 
     async def async_press(self) -> None:

@@ -78,3 +78,41 @@ async def test_turn_on_calls_api(
     assert args[0] == 1
     assert args[1] == 50
     assert args[2] == "DIM"
+
+
+async def test_entity_unique_id_format(
+    hass: HomeAssistant, mock_setup_entry, ipbuilding_devices
+) -> None:
+    """Entity unique_ids must not include the entry_id.
+
+    Including the entry_id in the unique_id makes every entity appear as
+    "new" on every reinstall, doubling the entities in Home Assistant.
+    The format is pinned here so the regression does not return.
+    """
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_HOST: "192.0.2.10", CONF_PORT: 30200},
+        entry_id="test-unique-id",
+        unique_id="192.0.2.10:30200",
+    )
+    entry.add_to_hass(hass)
+
+    with patch("custom_components.ipbuilding.IPBuildingAPI") as mock_api_cls:
+        mock_api = mock_api_cls.return_value
+        mock_api.get_devices = AsyncMock(return_value=ipbuilding_devices)
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    registry = er.async_get(hass)
+    for entity in registry.entities.values():
+        if entity.platform != DOMAIN:
+            continue
+        # No entry_id or "ipbuilding_{entry_id}_" prefix allowed.
+        assert entry.entry_id not in entity.unique_id, (
+            f"Entity {entity.entity_id} unique_id {entity.unique_id!r} must not "
+            f"contain the entry_id; that breaks upgrades."
+        )
+        assert entity.unique_id.startswith("ipbuilding_"), (
+            f"Entity {entity.entity_id} unique_id {entity.unique_id!r} must "
+            f"start with 'ipbuilding_'."
+        )

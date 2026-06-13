@@ -40,7 +40,7 @@ class IPBuildingScene(IPBuildingEntity, Scene):
         dtype = int(device.get("Type") or 0)
         hub_id, _ = HUB_BY_TYPE[dtype]
         super().__init__(coordinator, device, hub_id)
-        self._attr_unique_id = f"{coordinator.unique_id_prefix}_scene_{self._device_id}"
+        self._attr_unique_id = f"ipbuilding_scene_{self._device_id}"
         self._attr_device_info["model"] = "Scene"
 
     async def async_activate(self, **kwargs) -> None:

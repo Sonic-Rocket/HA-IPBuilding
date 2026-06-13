@@ -68,7 +68,7 @@ class IPBuildingSystemSensor(IPBuildingEntity, SensorEntity):
         hub: str,
     ) -> None:
         super().__init__(coordinator, device, hub)
-        self._attr_unique_id = f"{coordinator.unique_id_prefix}_sensor_{self._device_id}"
+        self._attr_unique_id = f"ipbuilding_sensor_{self._device_id}"
         self._attr_name = (
             device.get("Description")
             or device.get("name")
@@ -96,7 +96,7 @@ class IPBuildingPowerSensor(IPBuildingEntity, SensorEntity):
         dtype = int(device.get("Type") or 0)
         hub_id, _ = HUB_BY_TYPE[dtype]
         super().__init__(coordinator, device, hub_id)
-        self._attr_unique_id = f"{coordinator.unique_id_prefix}_power_{self._device_id}"
+        self._attr_unique_id = f"ipbuilding_power_{self._device_id}"
         self._attr_name = (
             f"{device.get('Description') or device.get('name')} Power"
         )

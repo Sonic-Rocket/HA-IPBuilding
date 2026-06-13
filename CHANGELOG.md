@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.4.1] - 2026-06-13
+
+### Fixed
+- **Duplicate entities on upgrade**: 0.3.0/0.4.0 included the config-entry
+  id in every entity `unique_id` (`ipbuilding_{entry_id}_{type}_{id}`), which
+  changed the unique_id of every existing entity on upgrade and caused Home
+  Assistant to register all entities a second time. The `entry_id` prefix has
+  been removed; unique_ids are back to the stable `ipbuilding_{type}_{id}`
+  format. The config flow still enforces one config entry per `host:port`, so
+  the prefix was redundant.
+
+### Tests
+- New regression test `test_entity_unique_id_format` pins the
+  `ipbuilding_{type}_{id}` format and asserts that no entity `unique_id`
+  contains the config-entry id.
+
 ## [0.4.0] - 2026-06-12
 
 ### Added

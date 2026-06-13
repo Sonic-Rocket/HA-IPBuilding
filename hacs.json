@@ -1,6 +1,4 @@
 {
     "name": "IPBuilding",
-    "render_readme": true,
-    "content_in_root": false,
-    "license": "MIT"
+    "content_in_root": false
 }

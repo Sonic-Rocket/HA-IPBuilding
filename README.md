@@ -1,5 +1,9 @@
 # Home Assistant Integration for IPBuilding
 
+[![Version](https://img.shields.io/github/v/release/Sonic-Rocket/HA-IPBuilding)](https://github.com/Sonic-Rocket/HA-IPBuilding/releases/latest)
+[![License](https://img.shields.io/github/license/Sonic-Rocket/HA-IPBuilding)](LICENSE)
+[![Quality Scale](https://img.shields.io/badge/quality%20scale-bronze-brightgreen)](https://developers.home-assistant.io/docs/core/integration-quality-scale/)
+
 Control your **IPBuilding** smart living system directly from Home Assistant — no extra apps or cloud services required.
 
 This integration lets you control lights, scenes, ventilation, zone heating and other building automation features from a single interface.
@@ -33,9 +37,7 @@ This integration creates the following Home Assistant platforms: `light`, `switc
 Make sure the [prerequisites](#prerequisites) are met before installing.
 
 [![Add to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Sonic-Rocket&repository=HA-IPBuilding&category=integration)
-[![Version](https://img.shields.io/github/v/release/Sonic-Rocket/HA-IPBuilding)](https://github.com/Sonic-Rocket/HA-IPBuilding/releases/latest)
-[![License](https://img.shields.io/github/license/Sonic-Rocket/HA-IPBuilding)](LICENSE)
-[![Quality Scale](https://img.shields.io/badge/quality%20scale-bronze-brightgreen)](https://developers.home-assistant.io/docs/core/integration-quality-scale/)
+
 1. Add this repository as a **Custom repository** in HACS. 
 2. Search for **HA-IPBuilding** in HACS.
 3. Install the integration and **restart Home Assistant**.

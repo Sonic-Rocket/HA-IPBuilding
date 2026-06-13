@@ -34,12 +34,14 @@ async def async_setup_entry(
             dtype = int(device.get("Type") or 0)
             if dtype == TYPE_TIME:
                 entities.append(
-                    IPBuildingSystemSensor(coordinator, device, "Time", "hub_system")
+                    IPBuildingSystemSensor(
+                        coordinator, device, "Time", HUB_BY_TYPE[TYPE_TIME][0]
+                    )
                 )
             elif dtype == TYPE_REGIME:
                 entities.append(
                     IPBuildingSystemSensor(
-                        coordinator, device, "Regime", "hub_system"
+                        coordinator, device, "Regime", HUB_BY_TYPE[TYPE_REGIME][0]
                     )
                 )
             elif dtype in (TYPE_RELAY, TYPE_DIMMER) and "Watt" in device:
@@ -69,11 +71,8 @@ class IPBuildingSystemSensor(IPBuildingEntity, SensorEntity):
     ) -> None:
         super().__init__(coordinator, device, hub)
         self._attr_unique_id = f"ipbuilding_sensor_{self._device_id}"
-        self._attr_name = (
-            device.get("Description")
-            or device.get("name")
-            or f"{sensor_type} {self._device_id}"
-        )
+        # Inherit the entity name from the device (set in the base
+        # ``IPBuildingEntity.__init__`` as ``DeviceInfo.name``).
         self._attr_device_info["model"] = sensor_type
         self._attr_entity_registry_visible_default = False
 
@@ -85,7 +84,17 @@ class IPBuildingSystemSensor(IPBuildingEntity, SensorEntity):
 
 
 class IPBuildingPowerSensor(IPBuildingEntity, SensorEntity):
-    """A power sensor derived from a relay/dimmer's Watt attribute and state."""
+    """A power sensor derived from a relay/dimmer's Watt attribute and state.
+
+    The reported wattage is an **estimate**: for dimmers it scales
+    ``Watt`` by the dimmer's percentage, and for relays it reports
+    ``Watt`` when on and ``0`` when off. ``SensorStateClass.MEASUREMENT``
+    is set so that downstream ``integration`` helper sensors can convert
+    the value to kWh for Home Assistant's Energy Dashboard. The sensor
+    is hidden by default; if you do not use the integration helper, you
+    can leave the entity disabled. The estimate is good enough for
+    at-a-glance energy dashboards but should not be used for billing.
+    """
 
     _attr_device_class = SensorDeviceClass.POWER
     _attr_native_unit_of_measurement = UnitOfPower.WATT
@@ -97,9 +106,11 @@ class IPBuildingPowerSensor(IPBuildingEntity, SensorEntity):
         hub_id, _ = HUB_BY_TYPE[dtype]
         super().__init__(coordinator, device, hub_id)
         self._attr_unique_id = f"ipbuilding_power_{self._device_id}"
-        self._attr_name = (
-            f"{device.get('Description') or device.get('name')} Power"
-        )
+        # Distinguish the power sensor from the parent device in the UI
+        # ("Kitchen Dimmer" / "Kitchen Dimmer Power") while keeping the
+        # entity_id short ("sensor.kitchen_dimmer_power"). The base class
+        # leaves ``_attr_name`` as ``None`` so we set only the suffix here.
+        self._attr_name = "Power"
         self._attr_device_info["model"] = "Dimmer" if dtype == TYPE_DIMMER else "Relay"
 
     @property

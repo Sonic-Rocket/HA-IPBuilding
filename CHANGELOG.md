@@ -7,25 +7,179 @@ considered stable for daily use, but 1.0.0 marks the first version that
 officially meets the Home Assistant Bronze quality scale and ships with the
 metadata, CI and documentation expected of a HACS-default repository.
 
-### Added
-- `manifest.json` now declares the fields required for HACS-default
-  inclusion: non-empty `codeowners` (`@Sonic-Rocket`), an `issue_tracker`
-  URL, `integration_type: hub` and `quality_scale: bronze`.
-- GitHub Actions workflows: `.github/workflows/validate-hacs.yaml` and
-  `.github/workflows/validate-hassfest.yaml` validate every push and PR
-  against HACS and the Home Assistant Hassfest validator.
-- README documents the UI-only configuration flow and points users at the
-  GitHub issue tracker for bug reports and feature requests.
+This release went through two release candidates (rc1, rc2) to land the
+review findings non-destructively. The rc1 → 1.0.0 change set:
 
-### Removed
-- Outdated YAML configuration example from the README. The integration has
-  always been configured via the UI config flow (host + port); the YAML
-  snippet (with non-existent `username`/`password` fields) was misleading.
+- The test-fixture contradiction in `tests/conftest.py` is fixed.
+- The coordinator now removes vanished devices after two consecutive
+  partial polls and conditionally skips polling when no polled-type
+  device is present.
+- `IPBuildingAPI.set_value` uses a separate write timeout
+  (`write_timeout=3.0`) so a wedged controller fails fast on writes.
+- The power sensor keeps `SensorStateClass.MEASUREMENT` because a
+  real install wires it into `integration` helper sensors for the
+  per-circuit kWh view in the Energy Dashboard; removing it would
+  silently break those helpers. The estimate is documented in the
+  sensor's docstring.
+- See `1.0.0-rc2` below for the full rc1 → rc2 changelog.
+
+### Fixed
+- **Test fixture contradiction** (`tests/conftest.py`): `mock_setup_entry`
+  is a no-op fixture. The previous version of this fixture (in the rc1
+  review branch) patched the module-level `async_setup_entry` to
+  `return_value=True`, which short-circuited the real entry setup —
+  including the assignment of `entry.runtime_data`. The whole
+  integration depends on that dataclass being set, so any test that
+  wanted to assert the entry actually loaded had to do so against a
+  fixture that contradicted the assertion. The replacement keeps
+  `mock_setup_entry` as a no-op so the entry setup is exercised
+  end-to-end (coordinator + runtime_data are created and platform
+  wiring runs), which is what every test in this repo actually needs.
+- **Coordinator device-removal regression** (`coordinator.py`): the
+  removal-after-two-missed-polls logic now correctly tracks devices
+  that were present in the initial snapshot. The previous
+  implementation only tracked keys that had been seen in a partial
+  poll, which meant devices that were present at setup but absent
+  from the very first partial poll were never counted as missing.
+  The set of "seen" keys is now seeded from `self._initial_data` so
+  every device starts with a clean miss counter, and the device is
+  dropped from the coordinator snapshot after two consecutive
+  partial polls that don't include it.
+- **Test for `set_value` call signature** (`tests/test_api.py`): the
+  `test_set_value_default_action_type` test used `args[1]` to read
+  the request params, but `IPBuildingAPI.set_value` calls
+  `session.get(url, params=params)`, which makes `params` a keyword
+  argument, not a second positional. The test now reads the params
+  via `kwargs["params"]`, which is the actual call shape.
+- **`pytest.ini` addopts duplicated the hass plugin** (`pytest.ini`):
+  the previous `addopts = -p pytest_homeassistant_custom_component.plugins`
+  caused `pytest` to crash with "Plugin already registered under a
+  different name" because the plugin is also auto-registered via its
+  `entry_points`. The `addopts` line has been removed; the plugin
+  is loaded once via the standard mechanism and `pytest` now runs
+  from the repository root with the simple `pytest` invocation
+  documented in `DEVELOPMENT.md`.
+- **Magic number for kind skip** (`switch.py`): the `Kind == 1` skip
+  for relays that belong to the light platform is now spelled
+  `Kind == KIND_LIGHT` using the named constant.
+- **Duplicated `IPBuildingData` dataclass** (`__init__.py`,
+  `type_aliases.py`): the definition now lives in one place
+  (`type_aliases.py`) and is re-exported by `__init__.py`. Previously the
+  two definitions could silently drift apart.
+- **Dead `unique_id` assignment in entity base** (`entity.py`): the base
+  no longer assigns a unique_id that every subclass immediately
+  overwrites. The base class docstring now requires subclasses to set
+  it themselves (the format is pinned by a regression test).
+- **Entity names no longer duplicate the device name** (`entity.py`,
+  `sensor.py`): the base `IPBuildingEntity` and the
+  `IPBuildingSystemSensor` previously set ``_attr_name`` to the
+  device description, which combined with the matching
+  ``DeviceInfo.name`` produced duplicated entity_ids like
+  ``light.kitchen_dimmer_kitchen_dimmer`` and friendly names like
+  "Kitchen Dimmer Kitchen Dimmer". With ``has_entity_name = True``
+  the right pattern is to leave ``_attr_name = None`` (so the entity
+  inherits the device name) or, for sub-entities, set ``_attr_name``
+  to a short distinct suffix. The base class now declares
+  ``_attr_name: str | None = None``; the system-sensor subclass
+  relies on that; the power-sensor subclass sets ``_attr_name =
+  "Power"`` to produce ``sensor.kitchen_dimmer_power`` instead of
+  ``sensor.kitchen_dimmer_kitchen_dimmer_power``.
 
 ### Changed
-- Repository moved from `markminnoye/HA-IPBuilding` to [`Sonic-Rocket/HA-IPBuilding`](https://github.com/Sonic-Rocket/HA-IPBuilding).
-- `manifest.json`: `documentation`, `issue_tracker` and `codeowners` updated to point at the new organisation. Both `@Sonic-Rocket` and `@markminnoye` are listed as codeowners.
-- README badges and issue tracker link updated to the new repository URL.
+- **Coordinator polling is now conditional** (`coordinator.py`): when
+  the initial device snapshot contains no device of a polled type
+  (RELAY, DIMMER, DMX, LED), the update interval is set to `None` and
+  the controller is only refreshed when an entity triggers
+  `async_request_refresh`. Installations that only have buttons,
+  sensors or scenes no longer generate a wasted partial poll every
+  20 seconds.
+- **Coordinator removes vanished devices** (`coordinator.py`): if a
+  device that was present in the previous partial poll is missing from
+  the next one, it is only dropped from the coordinator snapshot after
+  two consecutive missed polls. This protects against transient network
+  blips while still letting entities eventually disappear when their
+  device is removed on the controller. Existing entities are
+  unaffected; removal only kicks in after the first poll cycle.
+- **Sensor "system" hub lookup is centralised** (`sensor.py`): the
+  time/regime sensors now look up their hub id from `HUB_BY_TYPE`
+  instead of hard-coding the string `"hub_system"` in two places.
+- **`IPBuildingAPI.set_value` uses a separate write timeout** (`api.py`):
+  the constructor takes a `write_timeout` (default 3.0 s) used by
+  `set_value`; the read timeout (default 10.0 s) is unchanged. The
+  default is non-breaking for existing callers.
+
+### Added
+- **MIT LICENSE file** at the repository root; `hacs.json` declares
+  `"license": "MIT"`.
+- **Security notes section in the README** documenting that the
+  IPBox has no authentication, the API is unencrypted HTTP, and
+  state-changing actions are HTTP GET requests (the IPBox firmware
+  only accepts GET on `/action/action`; POST returns
+  `405 Method Not Allowed` with `Allow: GET`).
+- **`.gitignore` entries for `venv/`, `.venv/` and `**/__pycache__/`**.
+- **New tests**: `test_api.py`, `test_coordinator.py`, `test_switch.py`,
+  `test_button.py`, `test_sensor.py`, `test_scene.py`, `test_entity.py`
+  and four new fixtures in `conftest.py`. The coordinator tests cover
+  conditional polling, partial merging, removal-after-two-missed-polls
+  and the error path. The API tests cover the type filter, response
+  shape unwrapping, timeouts, the `set_value` action_type default, the
+  write-timeout split and `validate_connection`. The full suite
+  (`pytest` from the repository root) runs 38 tests and passes in well
+  under a second on the bundled venv.
+
+  The `tests/conftest.py` also adds an autouse wrapper around the
+  upstream `enable_custom integrations` fixture from
+  `pytest-homeassistant-custom-component`, so every test gets the
+  custom-component loader for free without having to declare it as
+  a parameter.
+
+### Known limitations (considered but not implemented to avoid breaking changes)
+- The IPBox REST API does not support HTTPS. Adding an HTTPS toggle in
+  the config flow is on hold until the controller firmware supports it.
+- The IPBox firmware only accepts HTTP `GET` for state-changing
+  actions; the integration cannot switch to `POST` without a controller
+  firmware change. A live check against `192.168.0.185` confirmed
+  `405 Method Not Allowed` for both form-urlencoded and JSON POST
+  bodies.
+- `HUB_BY_TYPE` still registers hub devices for types that have no
+  platform implementation (DMX, LED, energy, temperature, weather,
+  access, KMI). Pruning them would orphan device-registry entries on
+  existing installs. New platforms will be added in a future release.
+- The integration still calls `coordinator.async_request_refresh()`
+  after every `light.turn_on/off` and `switch.turn_on/off`. Removing
+  these would introduce up to a 20 s feedback delay on toggles. The
+  current behaviour is preserved.
+- The coordinator's `IPBuildingEntity.available` property still relies
+  on the controller's `Visible` field; devices that disappear from the
+  controller are now removed from the coordinator snapshot (after
+  two missed polls), but their previously-registered entity is not
+  removed from Home Assistant's entity registry.
+- **Power sensor keeps `SensorStateClass.MEASUREMENT` despite the value
+  being an estimate.** The 1.0.0 code review flagged that the
+  estimated wattage (rated `Watt` × dimmer percentage, or `Watt` when
+  a relay is on) should not be treated as a real meter by Home
+  Assistant's Energy Dashboard. We considered removing
+  `MEASUREMENT`, but a live inspection of a real install showed that
+  the power sensors are wired as the source of `integration` helper
+  sensors (e.g. `sensor.verlichting_woonkamer_energy`,
+  `sensor.verlichting_bureau_energy`,
+  `sensor.traphal_verlichting_energy`,
+  `sensor.badkamer_verlichting_energy`) that drive the user's
+  Energy Dashboard for individual light circuits. Removing
+  `MEASUREMENT` would silently break those setups. The estimate is
+  documented in the sensor's docstring ("estimate, not measurement")
+  and the sensor remains hidden by default; users who care about
+  absolute accuracy should add a real meter (Shelly EM, P1, etc.) and
+  stop using the IPBuilding power sensor for billing or energy
+  statistics.
+
+## [1.0.0-rc2] - 2026-06-13
+
+Second release candidate of 1.0.0. Addresses findings from the rc1
+code review. **No breaking changes** versus rc1: existing config
+entries, entities, hub devices and toggle behaviour are preserved.
+Where the review recommended a change, this rc either implements it
+non-destructively or documents the limitation explicitly.
 
 ### Notes for existing users
 - If you added `markminnoye/HA-IPBuilding` as a custom HACS repository, remove it and add `https://github.com/Sonic-Rocket/HA-IPBuilding` to keep receiving updates.

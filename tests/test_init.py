@@ -69,8 +69,11 @@ async def test_setup_entry_cannot_connect(
             side_effect=IPBuildingCannotConnect("nope")
         )
 
-        with pytest.raises(ConfigEntryNotReady):
-            await hass.config_entries.async_setup(entry.entry_id)
+        # The HA framework catches ConfigEntryNotReady internally and
+        # transitions the entry to SETUP_RETRY; the exception does not
+        # propagate out of async_setup. We just need to confirm the entry
+        # landed in the retry state.
+        await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
     assert entry.state is ConfigEntryState.SETUP_RETRY

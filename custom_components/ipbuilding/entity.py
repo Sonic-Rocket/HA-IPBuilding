@@ -15,9 +15,20 @@ class IPBuildingEntity(CoordinatorEntity[IPBuildingDataCoordinator]):
 
     Provides common device-info, available and _device_data plumbing so that
     platform implementations only have to override domain-specific behaviour.
+
+    Subclasses **must** set ``_attr_unique_id`` themselves (the format
+    ``ipbuilding_{type}_{device_id}`` is pinned by a regression test).
     """
 
     _attr_has_entity_name = True
+    # Default: inherit the entity name from the device (the ``DeviceInfo.name``
+    # we set below). Setting ``_attr_name`` to the same value as the device
+    # name would cause Home Assistant to slug the description twice in
+    # ``entity_id`` ("light.kitchen_dimmer_kitchen_dimmer") and to show the
+    # friendly name as "Kitchen Dimmer Kitchen Dimmer". Platform subclasses
+    # that need a distinct entity name (e.g. a power sensor exposing
+    # "<device> Power") override ``_attr_name`` themselves.
+    _attr_name: str | None = None
 
     def __init__(
         self,
@@ -29,8 +40,15 @@ class IPBuildingEntity(CoordinatorEntity[IPBuildingDataCoordinator]):
         super().__init__(coordinator)
         self._device_id = device.get("ID") or device.get("id")
         self._initial_device_data = device
-        self._attr_unique_id = f"ipbuilding_{self._device_id}"
-        self._attr_name = (
+        # Leave ``_attr_name`` as ``None`` so the entity inherits its name
+        # from the device (``DeviceInfo.name`` below). Setting the same
+        # description on both causes Home Assistant to slug the
+        # description twice in ``entity_id`` ("light.kitchen_dimmer_kitchen_dimmer")
+        # and to show the friendly name with the description repeated.
+        # Platform subclasses that need a distinct entity name (e.g. the
+        # power sensor exposing "<device> Power") override ``_attr_name``
+        # themselves.
+        device_name = (
             device.get("Description")
             or device.get("name")
             or f"Device {self._device_id}"
@@ -38,7 +56,7 @@ class IPBuildingEntity(CoordinatorEntity[IPBuildingDataCoordinator]):
 
         info: dict[str, Any] = {
             "identifiers": {(DOMAIN, f"output_{self._device_id}")},
-            "name": self._attr_name,
+            "name": device_name,
             "manufacturer": MANUFACTURER,
             "via_device": (DOMAIN, hub_id),
         }

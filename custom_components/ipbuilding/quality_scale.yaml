@@ -2,6 +2,10 @@ rules:
   # Bronze
   action-setup: done
   appropriate-polling: done
+  # The coordinator polls every 20 s only when at least one
+  # POLLED_DEVICE_TYPES device is present at startup. Installations
+  # that only have buttons, sensors or scenes disable the interval and
+  # rely on write-triggered refreshes (see `coordinator.py`).
   brands: done
   common-modules: done
   config-flow: done

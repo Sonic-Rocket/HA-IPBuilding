@@ -87,14 +87,11 @@ All entities are automatically grouped by their IPBuilding `Group` property:
 - The device manufacturer is set to "IPBuilding"
 
 #### Entity Attributes
-All entities expose the following IPBuilding properties as attributes:
-- `IpAddress`: IP address of the physical device
-- `Port`: Port number
-- `Protocol`: Communication protocol
-- `ID`: IPBuilding device ID
-- `Status`: Current device status
-- `Output`: Output configuration
-- `Kind`: Device kind/subtype (see Kinds table below)
+Entities expose only the fields that the platform needs to function (e.g.
+`Status` for switches, `Value` for time/regime sensors, `Watt` for the
+power estimate). The full controller-side device record is available in
+the coordinator snapshot and can be added as `extra_state_attributes` on a
+per-platform basis if a downstream use case needs it.
 
 ## Development
 

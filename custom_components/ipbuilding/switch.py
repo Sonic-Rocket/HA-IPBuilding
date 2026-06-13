@@ -12,6 +12,7 @@ from .const import (
     HUB_BY_TYPE,
     KIND_AUTOMATION,
     KIND_FAN,
+    KIND_LIGHT,
     KIND_LOCK,
     KIND_SOCKET,
     KIND_VALVE,
@@ -47,7 +48,7 @@ async def async_setup_entry(
             if int(device.get("Type") or 0) != TYPE_RELAY:
                 continue
             # Skip relays that the light platform already exposed.
-            if device.get("Kind") == 1:
+            if device.get("Kind") == KIND_LIGHT:
                 continue
             entities.append(IPBuildingSwitch(coordinator, device))
 

@@ -33,12 +33,14 @@ class IPBuildingAPI:
         port: int,
         session: aiohttp.ClientSession,
         timeout: float = DEFAULT_TIMEOUT,
+        write_timeout: float = 3.0,
     ) -> None:
         """Initialize the API client."""
         self._host = host
         self._port = port
         self._session = session
         self._timeout = timeout
+        self._write_timeout = write_timeout
         self._base_url = f"http://{host}:{port}/api/v1"
 
     @property
@@ -113,7 +115,16 @@ class IPBuildingAPI:
     async def set_value(
         self, device_id: int, value: int, action_type: str | None = None
     ) -> Any:
-        """Set a value for a device using the proper action endpoint."""
+        """Set a value for a device using the proper action endpoint.
+
+        Uses an HTTP GET request because the IPBuilding REST API only
+        accepts GET on ``/action/action``. This was confirmed against a
+        live IPBox (firmware returns ``405 Method Not Allowed`` with
+        ``Allow: GET`` for POST). The endpoint mutates device state, so
+        the URL contains the device id and target value. Callers should
+        be aware that URLs may end up in upstream proxy / HA recorder
+        logs.
+        """
         if action_type is None:
             action_type = "OFF" if value == 0 else "DIM"
 
@@ -124,7 +135,7 @@ class IPBuildingAPI:
             "value": value,
         }
         try:
-            async with asyncio.timeout(self._timeout):
+            async with asyncio.timeout(self._write_timeout):
                 async with self._session.get(url, params=params) as response:
                     response.raise_for_status()
                     return await response.json(content_type=None)

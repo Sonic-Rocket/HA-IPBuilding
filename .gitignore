@@ -1,6 +1,9 @@
 !config/custom_components/ipbuilding/
 __pycache__/
+**/__pycache__/
 *.pyc
 .DS_Store
 !config/custom_components/ipbuilding/*.py
 config/
+venv/
+.venv/

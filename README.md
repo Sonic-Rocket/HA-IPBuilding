@@ -64,6 +64,12 @@ The integration is configured entirely through the Home Assistant user interface
 
 The config flow validates the connection before saving, and only one config entry per `host:port` is allowed.
 
+## Security notes
+
+- The IPBuilding controller has no built-in authentication — anyone with network access to the IPBox can issue commands. **Do not expose the controller outside your LAN.**
+- All API traffic is unencrypted HTTP. The IPBox REST API does not support HTTPS as of writing.
+- State-changing actions (`/action/action`) are HTTP GET requests because the IPBox firmware only accepts GET on that endpoint (POST returns `405 Method Not Allowed`). The URL contains the device id and the requested value, so it may appear in upstream proxy and Home Assistant recorder logs.
+
 ## Actions
 
 The integration does not register custom service actions. All functionality is exposed through standard Home Assistant service calls available on the created entities:

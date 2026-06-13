@@ -1,7 +1,6 @@
 """The IPBuilding integration."""
 from __future__ import annotations
 
-from dataclasses import dataclass
 import logging
 
 from homeassistant.config_entries import ConfigEntry
@@ -14,7 +13,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .api import IPBuildingAPI, IPBuildingCannotConnect
 from .const import DOMAIN, HUB_BY_TYPE
 from .coordinator import IPBuildingDataCoordinator
-from .type_aliases import IPBuildingConfigEntry
+from .type_aliases import IPBuildingConfigEntry, IPBuildingData
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,13 +25,7 @@ PLATFORMS: list[Platform] = [
     Platform.SCENE,
 ]
 
-
-@dataclass
-class IPBuildingData:
-    """Runtime data held by the config entry."""
-
-    api: IPBuildingAPI
-    coordinator: IPBuildingDataCoordinator
+__all__ = ["IPBuildingConfigEntry", "IPBuildingData", "PLATFORMS"]
 
 
 async def async_setup_entry(

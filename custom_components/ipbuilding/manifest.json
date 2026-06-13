@@ -1,7 +1,7 @@
 {
     "domain": "ipbuilding",
     "name": "IPBuilding",
-    "codeowners": ["@Sonic-Rocket"],
+    "codeowners": ["@Sonic-Rocket", "@markminnoye"],
     "config_flow": true,
     "dependencies": [],
     "documentation": "https://github.com/Sonic-Rocket/HA-IPBuilding",

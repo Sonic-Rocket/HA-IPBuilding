@@ -24,7 +24,7 @@ metadata, CI and documentation expected of a HACS-default repository.
 
 ### Changed
 - Repository moved from `markminnoye/HA-IPBuilding` to [`Sonic-Rocket/HA-IPBuilding`](https://github.com/Sonic-Rocket/HA-IPBuilding).
-- `manifest.json`: `documentation`, `issue_tracker` and `codeowners` updated to point at the new organisation.
+- `manifest.json`: `documentation`, `issue_tracker` and `codeowners` updated to point at the new organisation. Both `@Sonic-Rocket` and `@markminnoye` are listed as codeowners.
 - README badges and issue tracker link updated to the new repository URL.
 
 ### Notes for existing users

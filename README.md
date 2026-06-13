@@ -32,9 +32,9 @@ This integration creates the following Home Assistant platforms: `light`, `switc
 
 Make sure the [prerequisites](#prerequisites) are met before installing.
 
-[![Add to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=markminnoye&repository=HA-IPBuilding&category=integration)
-[![Version](https://img.shields.io/github/v/release/markminnoye/HA-IPBuilding)](https://github.com/markminnoye/HA-IPBuilding/releases/latest)
-[![License](https://img.shields.io/github/license/markminnoye/HA-IPBuilding)](LICENSE)
+[![Add to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Sonic-Rocket&repository=HA-IPBuilding&category=integration)
+[![Version](https://img.shields.io/github/v/release/Sonic-Rocket/HA-IPBuilding)](https://github.com/Sonic-Rocket/HA-IPBuilding/releases/latest)
+[![License](https://img.shields.io/github/license/Sonic-Rocket/HA-IPBuilding)](LICENSE)
 [![Quality Scale](https://img.shields.io/badge/quality%20scale-bronze-brightgreen)](https://developers.home-assistant.io/docs/core/integration-quality-scale/)
 1. Add this repository as a **Custom repository** in HACS. 
 2. Search for **HA-IPBuilding** in HACS.
@@ -80,7 +80,7 @@ To remove the integration, go to **Settings → Devices & Services → IPBuildin
 
 ## Issues and feature requests
 
-Please use the [issue tracker](https://github.com/markminnoye/HA-IPBuilding/issues) to report bugs or request features. When reporting a bug, include:
+Please use the [issue tracker](https://github.com/Sonic-Rocket/HA-IPBuilding/issues) to report bugs or request features. When reporting a bug, include:
 
 - Home Assistant version
 - Integration version (see **Settings → Devices & Services → IPBuilding**)

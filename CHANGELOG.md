@@ -9,7 +9,7 @@ metadata, CI and documentation expected of a HACS-default repository.
 
 ### Added
 - `manifest.json` now declares the fields required for HACS-default
-  inclusion: non-empty `codeowners` (`@markminnoye`), an `issue_tracker`
+  inclusion: non-empty `codeowners` (`@Sonic-Rocket`), an `issue_tracker`
   URL, `integration_type: hub` and `quality_scale: bronze`.
 - GitHub Actions workflows: `.github/workflows/validate-hacs.yaml` and
   `.github/workflows/validate-hassfest.yaml` validate every push and PR
@@ -21,6 +21,14 @@ metadata, CI and documentation expected of a HACS-default repository.
 - Outdated YAML configuration example from the README. The integration has
   always been configured via the UI config flow (host + port); the YAML
   snippet (with non-existent `username`/`password` fields) was misleading.
+
+### Changed
+- Repository moved from `markminnoye/HA-IPBuilding` to [`Sonic-Rocket/HA-IPBuilding`](https://github.com/Sonic-Rocket/HA-IPBuilding).
+- `manifest.json`: `documentation`, `issue_tracker` and `codeowners` updated to point at the new organisation.
+- README badges and issue tracker link updated to the new repository URL.
+
+### Notes for existing users
+- If you added `markminnoye/HA-IPBuilding` as a custom HACS repository, remove it and add `https://github.com/Sonic-Rocket/HA-IPBuilding` to keep receiving updates.
 
 ## [0.4.1] - 2026-06-13
 

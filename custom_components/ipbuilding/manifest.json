@@ -1,13 +1,13 @@
 {
     "domain": "ipbuilding",
     "name": "IPBuilding",
-    "codeowners": ["@Sonic-Rocket", "@markminnoye"],
+    "codeowners": ["@markminnoye"],
     "config_flow": true,
     "dependencies": [],
-    "documentation": "https://github.com/Sonic-Rocket/HA-IPBuilding",
+    "documentation": "https://github.com/markminnoye/HA-IPBuilding",
     "integration_type": "hub",
     "iot_class": "local_polling",
-    "issue_tracker": "https://github.com/Sonic-Rocket/HA-IPBuilding/issues",
+    "issue_tracker": "https://github.com/markminnoye/HA-IPBuilding/issues",
     "quality_scale": "bronze",
     "requirements": [],
     "version": "1.0.0"

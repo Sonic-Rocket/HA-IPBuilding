@@ -1,13 +1,14 @@
-# HA-IPBuilding
+# Home Assistant Integration for IPBuilding
 
-Home Assistant custom integration for **IPBuilding** smart living systems.
+Control your **IPBuilding** smart living system directly from Home Assistant — no extra apps or cloud services required.
 
-This integration lets you control IPBuilding-driven functions such as lights, scenes (sferen), ventilation, zone heating and other building automation features directly from Home Assistant.
+This integration lets you control lights, scenes, ventilation, zone heating and other building automation features from a single interface.
 
-> This integration communicates directly with the **IPBox** controller over its IP-based API.  
-> Other IPBuilding hardware (switch modules, dimmers, etc.) is not accessed individually; all
-> control happens via the IPBox.
+## How it works
 
+This integration communicates with the **IPBox** via its built-in REST API. The IPBox is the central controller of your IPBuilding installation and acts as the single point of communication. Other IPBuilding hardware — such as switch modules, dimmers or sensors — is not accessed directly; all commands are routed through the IPBox.
+
+> **Requirement:** You need an IPBox reachable on your local network, with its REST API enabled.
 ## Features
 
 - Discover and control IPBuilding **lights** and **switches**
@@ -15,8 +16,6 @@ This integration lets you control IPBuilding-driven functions such as lights, sc
 - Control **ventilation** modes and other climate-related functions
 - Map IPBuilding entities to Home Assistant entities for dashboards and automations
 - Designed for both residential and assisted-living / workspace deployments
-
-> IPBuilding provides a central IP-based platform for smart living, workspaces and assisted living (lighting, heating, access control, energy management, emergency call, etc.). This integration aims to bring that platform into Home Assistant.
 
 ## Requirements
 
@@ -27,9 +26,9 @@ This integration lets you control IPBuilding-driven functions such as lights, sc
 
 ## Installation
 
-### HACS (recommended – if/when published)
-
-1. Add this repository as a **Custom repository** in HACS.
+### HACS (recommended)
+[![Add to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=markminnoye&repository=HA-IPBuilding&category=integration)
+1. Add this repository as a **Custom repository** in HACS. 
 2. Search for **HA-IPBuilding** in HACS.
 3. Install the integration and **restart Home Assistant**.
 
@@ -46,7 +45,7 @@ This integration lets you control IPBuilding-driven functions such as lights, sc
 
 ## Configuration
 
-Configuration is done via `configuration.yaml` (or via the UI if you add a Config Flow later).
+Configuration is done via the UI, or manually by editing `configuration.yaml`.
 
 Basic example:
 

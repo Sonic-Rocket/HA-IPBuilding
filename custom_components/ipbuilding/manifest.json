@@ -4,7 +4,7 @@
     "codeowners": [],
     "config_flow": true,
     "dependencies": [],
-    "documentation": "https://github.com/markminnoye/ipbuilding",
+    "documentation": "https://github.com/markminnoye/HA-IPBuilding",
     "iot_class": "local_polling",
     "requirements": [],
     "version": "0.4.1"

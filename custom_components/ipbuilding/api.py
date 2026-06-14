@@ -16,8 +16,13 @@ class IPBuildingAPIError(Exception):
     """Base exception for IPBuilding API errors."""
 
 
-class IPBuildingCannotConnect(IPBuildingAPIError):
-    """Raised when the IPBuilding controller is unreachable."""
+class IPBuildingCannotConnect(IPBuildingAPIError, aiohttp.ClientError):
+    """Raised when the IPBuilding controller is unreachable.
+
+    Inheriting from aiohttp.ClientError lets Home Assistant's
+    DataUpdateCoordinator recognise this as a known transport error and
+    log a single-line message instead of a full Python traceback.
+    """
 
 
 class IPBuildingInvalidResponse(IPBuildingAPIError):

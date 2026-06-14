@@ -1,5 +1,21 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+- **Cleaner error logs when the IPBox is unreachable.** When the controller
+  at `host:port` does not respond (e.g. it is powered off, disconnected
+  from the network, or blocked by a firewall), Home Assistant now logs
+  a single-line error such as `Error requesting ipbuilding data:
+  Cannot connect to host 192.168.x.x:30200` instead of a multi-line
+  Python traceback through the underlying HTTP client. The integration's
+  behaviour is unchanged: the config entry still goes into retry mode
+  with the same exponential backoff, and the existing
+  `ConfigEntryNotReady` / `Retrying in N seconds` flow continues to
+  work as before. After this change, `IPBuildingCannotConnect` also
+  inherits from `aiohttp.ClientError` so that Home Assistant's standard
+  transport-error handling picks it up automatically.
+
 ## [1.0.0] - 2026-06-13
 
 First HACS-ready release of the IPBuilding integration. The 0.x line was
